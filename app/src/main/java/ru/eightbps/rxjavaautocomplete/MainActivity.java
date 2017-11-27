@@ -60,12 +60,15 @@ public class MainActivity extends AppCompatActivity  {
                         .map(new Func1<TextViewTextChangeEvent, String>() {
                             @Override
                             public String call(TextViewTextChangeEvent textViewTextChangeEvent) {
+                                Log.d("NJW", "textViewChangeEvent");
                                 return textViewTextChangeEvent.text().toString();
                             }
                         })
                         .filter(new Func1<String, Boolean>() {
                             @Override
                             public Boolean call(String s) {
+                                Log.d("NJW", "ignoring those where lnegth < 2 characaters");
+
                                 return s.length() >= 2;
                             }
                         })
@@ -73,13 +76,15 @@ public class MainActivity extends AppCompatActivity  {
                         .flatMap(new Func1<String, Observable<PlaceAutocompleteResult>>() {
                             @Override
                             public Observable<PlaceAutocompleteResult> call(String s) {
+                                Log.d("NJW", "callling rest client for " + s);
+
                                 return RestClient.INSTANCE.getGooglePlacesClient().autocomplete(s);
                             }
                         })
                         .observeOn(AndroidSchedulers.mainThread())
                         .retry();
 
-        Observer<PlaceAutocompleteResult> autocompleteResultObserver = new Observer<PlaceAutocompleteResult>() {
+        Observer<PlaceAutocompleteResult> placeAutocompleteResultObserver = new Observer<PlaceAutocompleteResult>() {
 
             private static final String TAG = "PlaceAutocompleteResult";
 
@@ -97,23 +102,22 @@ public class MainActivity extends AppCompatActivity  {
             public void onNext(PlaceAutocompleteResult placeAutocompleteResult) {
                 Log.i(TAG, placeAutocompleteResult.toString());
 
-                List<NameAndPlaceId> list = new ArrayList<>();
+                List<String> list = new ArrayList<>();
                 for (Prediction prediction : placeAutocompleteResult.predictions) {
-                    list.add(new NameAndPlaceId(prediction.description, prediction.placeId));
+                    list.add(prediction.description);
                 }
 
-                ArrayAdapter<NameAndPlaceId> itemsAdapter = new ArrayAdapter<>(MainActivity.this,
+                ArrayAdapter<String> itemsAdapter = new ArrayAdapter<>(MainActivity.this,
                         android.R.layout.simple_list_item_1, list);
                 autoCompleteTextView.setAdapter(itemsAdapter);
                 String enteredText = autoCompleteTextView.getText().toString();
-                if (list.size() >= 1 && enteredText.equals(list.get(0).name)) {
+                if (list.size() >= 1 && enteredText.equals(list.get(0))) {
                     autoCompleteTextView.dismissDropDown();
                 } else {
                     autoCompleteTextView.showDropDown();
                 }
             }
         };
-        Observer<PlaceAutocompleteResult> placeAutocompleteResultObserver = autocompleteResultObserver;
         compositeSubscription.add(autocompleteResponseObservable
                 .subscribe(placeAutocompleteResultObserver));
     }
@@ -124,18 +128,5 @@ public class MainActivity extends AppCompatActivity  {
         compositeSubscription.unsubscribe();
     }
 
-    private static class NameAndPlaceId {
-        final String name;
-        final String placeId;
 
-        NameAndPlaceId(String name, String placeId) {
-            this.name = name;
-            this.placeId = placeId;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
 }
