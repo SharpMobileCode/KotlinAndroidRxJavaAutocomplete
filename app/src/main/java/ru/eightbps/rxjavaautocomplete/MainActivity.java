@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity  {
                         .observeOn(AndroidSchedulers.mainThread())
                         .retry();
 
-        Observer<PlaceAutocompleteResult> placeAutocompleteResultObserver = new Observer<PlaceAutocompleteResult>() {
+        Observer<PlaceAutocompleteResult> autocompleteResultObserver = new Observer<PlaceAutocompleteResult>() {
 
             private static final String TAG = "PlaceAutocompleteResult";
 
@@ -113,6 +113,7 @@ public class MainActivity extends AppCompatActivity  {
                 }
             }
         };
+        Observer<PlaceAutocompleteResult> placeAutocompleteResultObserver = autocompleteResultObserver;
         compositeSubscription.add(autocompleteResponseObservable
                 .subscribe(placeAutocompleteResultObserver));
     }

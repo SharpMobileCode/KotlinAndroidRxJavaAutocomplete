@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 26
@@ -34,7 +33,6 @@ dependencies {
     compile 'com.squareup.moshi:moshi:1.4.0'
     compile 'com.google.android.gms:play-services-maps:11.6.0'
     testCompile 'junit:junit:4.12'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 }
 repositories {
     mavenCentral()
