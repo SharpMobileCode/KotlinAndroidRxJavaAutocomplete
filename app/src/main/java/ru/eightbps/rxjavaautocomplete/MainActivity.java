@@ -38,7 +38,6 @@ import rx.subscriptions.CompositeSubscription;
 
 public class MainActivity extends AppCompatActivity  {
 
-    private static final long DELAY_IN_MILLIS = 500;
     private CompositeSubscription compositeSubscription = new CompositeSubscription();
 
     @Override
@@ -55,71 +54,8 @@ public class MainActivity extends AppCompatActivity  {
     // the only thing the main activity needs is compositeSubscription subscribe and unsubscribe.. maybe
 
     private void addOnAutoCompleteTextViewTextChangedObserver(final RxCustomAutoComplete autoCompleteTextView) {
-        Observable<PlaceAutocompleteResult> autocompleteResponseObservable =
-                RxTextView.textChangeEvents(autoCompleteTextView)
-                        .debounce(DELAY_IN_MILLIS, TimeUnit.MILLISECONDS)
-                        .map(new Func1<TextViewTextChangeEvent, String>() {
-                            @Override
-                            public String call(TextViewTextChangeEvent textViewTextChangeEvent) {
-                                Log.d("NJW", "textViewChangeEvent");
-                                return textViewTextChangeEvent.text().toString();
-                            }
-                        })
-                        .filter(new Func1<String, Boolean>() {
-                            @Override
-                            public Boolean call(String s) {
-                                Log.d("NJW", "ignoring those where lnegth < 2 characaters");
 
-                                return s.length() >= 2;
-                            }
-                        })
-                        .observeOn(Schedulers.io())
-                        .flatMap(new Func1<String, Observable<PlaceAutocompleteResult>>() {
-                            @Override
-                            public Observable<PlaceAutocompleteResult> call(String s) {
-                                Log.d("NJW", "callling rest client for " + s);
-
-                                return RestClient.INSTANCE.getGooglePlacesClient().autocomplete(s);
-                            }
-                        })
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .retry();
-
-        Observer<PlaceAutocompleteResult> placeAutocompleteResultObserver = new Observer<PlaceAutocompleteResult>() {
-
-
-            @Override
-            public void onCompleted() {
-                Log.i("NJW-network call", "onCompleted");
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.e("NJW", "onError", e);
-            }
-
-            @Override
-            public void onNext(PlaceAutocompleteResult placeAutocompleteResult) {
-                //Log.i("NJW", placeAutocompleteResult.toString());
-
-                List<String> list = new ArrayList<>();
-                for (Prediction prediction : placeAutocompleteResult.predictions) {
-                    list.add(prediction.description);
-                }
-
-                ArrayAdapter<String> itemsAdapter = new ArrayAdapter<>(MainActivity.this,
-                        android.R.layout.simple_list_item_1, list);
-                autoCompleteTextView.setAdapter(itemsAdapter);
-                String enteredText = autoCompleteTextView.getText().toString();
-                if (list.size() >= 1 && enteredText.equals(list.get(0))) {
-                    autoCompleteTextView.dismissDropDown();
-                } else {
-                    autoCompleteTextView.showDropDown();
-                }
-            }
-        };
-        Subscription subscription = autocompleteResponseObservable.subscribe(placeAutocompleteResultObserver);
-        compositeSubscription.add(subscription);
+        compositeSubscription.add(autoCompleteTextView.getSubscription());
     }
 
     @Override
