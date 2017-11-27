@@ -30,6 +30,7 @@ import ru.eightbps.rxjavaautocomplete.data.RestClient;
 import ru.eightbps.rxjavaautocomplete.utils.KeyboardHelper;
 import rx.Observable;
 import rx.Observer;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
@@ -45,7 +46,7 @@ public class MainActivity extends AppCompatActivity  {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final AutoCompleteTextView autoCompleteTextView = findViewById(R.id.autocomplete_text);
+        final RxCustomAutoComplete autoCompleteTextView = findViewById(R.id.autocomplete_text);
         addOnAutoCompleteTextViewTextChangedObserver(autoCompleteTextView);
     }
 
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity  {
     // 2. Put the observer into the control
     // the only thing the main activity needs is compositeSubscription subscribe and unsubscribe.. maybe
 
-    private void addOnAutoCompleteTextViewTextChangedObserver(final AutoCompleteTextView autoCompleteTextView) {
+    private void addOnAutoCompleteTextViewTextChangedObserver(final RxCustomAutoComplete autoCompleteTextView) {
         Observable<PlaceAutocompleteResult> autocompleteResponseObservable =
                 RxTextView.textChangeEvents(autoCompleteTextView)
                         .debounce(DELAY_IN_MILLIS, TimeUnit.MILLISECONDS)
@@ -86,21 +87,20 @@ public class MainActivity extends AppCompatActivity  {
 
         Observer<PlaceAutocompleteResult> placeAutocompleteResultObserver = new Observer<PlaceAutocompleteResult>() {
 
-            private static final String TAG = "PlaceAutocompleteResult";
 
             @Override
             public void onCompleted() {
-                Log.i(TAG, "onCompleted");
+                Log.i("NJW-network call", "onCompleted");
             }
 
             @Override
             public void onError(Throwable e) {
-                Log.e(TAG, "onError", e);
+                Log.e("NJW", "onError", e);
             }
 
             @Override
             public void onNext(PlaceAutocompleteResult placeAutocompleteResult) {
-                Log.i(TAG, placeAutocompleteResult.toString());
+                //Log.i("NJW", placeAutocompleteResult.toString());
 
                 List<String> list = new ArrayList<>();
                 for (Prediction prediction : placeAutocompleteResult.predictions) {
@@ -118,8 +118,8 @@ public class MainActivity extends AppCompatActivity  {
                 }
             }
         };
-        compositeSubscription.add(autocompleteResponseObservable
-                .subscribe(placeAutocompleteResultObserver));
+        Subscription subscription = autocompleteResponseObservable.subscribe(placeAutocompleteResultObserver);
+        compositeSubscription.add(subscription);
     }
 
     @Override

@@ -14,7 +14,7 @@
         android:paddingLeft="16dp"
         android:paddingRight="16dp"/>
 
-    <AutoCompleteTextView
+    <ru.eightbps.rxjavaautocomplete.RxCustomAutoComplete
         android:id="@+id/autocomplete_text"
         android:layout_width="match_parent"
         android:lines="1"
