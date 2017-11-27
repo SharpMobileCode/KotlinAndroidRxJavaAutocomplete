@@ -49,6 +49,10 @@ public class MainActivity extends AppCompatActivity  {
         addOnAutoCompleteTextViewTextChangedObserver(autoCompleteTextView);
     }
 
+    // TODO: 1. Put the Observable<PlaceAutocompleteResult> in the custom control
+    // 2. Put the observer into the control
+    // the only thing the main activity needs is compositeSubscription subscribe and unsubscribe.. maybe
+
     private void addOnAutoCompleteTextViewTextChangedObserver(final AutoCompleteTextView autoCompleteTextView) {
         Observable<PlaceAutocompleteResult> autocompleteResponseObservable =
                 RxTextView.textChangeEvents(autoCompleteTextView)
@@ -75,41 +79,42 @@ public class MainActivity extends AppCompatActivity  {
                         .observeOn(AndroidSchedulers.mainThread())
                         .retry();
 
+        Observer<PlaceAutocompleteResult> placeAutocompleteResultObserver = new Observer<PlaceAutocompleteResult>() {
+
+            private static final String TAG = "PlaceAutocompleteResult";
+
+            @Override
+            public void onCompleted() {
+                Log.i(TAG, "onCompleted");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.e(TAG, "onError", e);
+            }
+
+            @Override
+            public void onNext(PlaceAutocompleteResult placeAutocompleteResult) {
+                Log.i(TAG, placeAutocompleteResult.toString());
+
+                List<NameAndPlaceId> list = new ArrayList<>();
+                for (Prediction prediction : placeAutocompleteResult.predictions) {
+                    list.add(new NameAndPlaceId(prediction.description, prediction.placeId));
+                }
+
+                ArrayAdapter<NameAndPlaceId> itemsAdapter = new ArrayAdapter<>(MainActivity.this,
+                        android.R.layout.simple_list_item_1, list);
+                autoCompleteTextView.setAdapter(itemsAdapter);
+                String enteredText = autoCompleteTextView.getText().toString();
+                if (list.size() >= 1 && enteredText.equals(list.get(0).name)) {
+                    autoCompleteTextView.dismissDropDown();
+                } else {
+                    autoCompleteTextView.showDropDown();
+                }
+            }
+        };
         compositeSubscription.add(autocompleteResponseObservable
-                .subscribe(new Observer<PlaceAutocompleteResult>() {
-
-                    private static final String TAG = "PlaceAutocompleteResult";
-
-                    @Override
-                    public void onCompleted() {
-                        Log.i(TAG, "onCompleted");
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.e(TAG, "onError", e);
-                    }
-
-                    @Override
-                    public void onNext(PlaceAutocompleteResult placeAutocompleteResult) {
-                        Log.i(TAG, placeAutocompleteResult.toString());
-
-                        List<NameAndPlaceId> list = new ArrayList<>();
-                        for (Prediction prediction : placeAutocompleteResult.predictions) {
-                            list.add(new NameAndPlaceId(prediction.description, prediction.placeId));
-                        }
-
-                        ArrayAdapter<NameAndPlaceId> itemsAdapter = new ArrayAdapter<>(MainActivity.this,
-                                android.R.layout.simple_list_item_1, list);
-                        autoCompleteTextView.setAdapter(itemsAdapter);
-                        String enteredText = autoCompleteTextView.getText().toString();
-                        if (list.size() >= 1 && enteredText.equals(list.get(0).name)) {
-                            autoCompleteTextView.dismissDropDown();
-                        } else {
-                            autoCompleteTextView.showDropDown();
-                        }
-                    }
-                }));
+                .subscribe(placeAutocompleteResultObserver));
     }
 
     @Override
