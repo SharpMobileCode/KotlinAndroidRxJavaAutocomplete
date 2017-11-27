@@ -35,29 +35,18 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity  {
 
     private static final long DELAY_IN_MILLIS = 500;
     private CompositeSubscription compositeSubscription = new CompositeSubscription();
-    private GoogleMap map;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
-        final AutoCompleteTextView autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.autocomplete_text);
-        addOnAutoCompleteTextViewItemClickedSubscriber(autoCompleteTextView);
+        final AutoCompleteTextView autoCompleteTextView = findViewById(R.id.autocomplete_text);
         addOnAutoCompleteTextViewTextChangedObserver(autoCompleteTextView);
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        map = googleMap;
     }
 
     private void addOnAutoCompleteTextViewTextChangedObserver(final AutoCompleteTextView autoCompleteTextView) {
@@ -121,63 +110,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                     }
                 }));
-    }
-
-    private void addOnAutoCompleteTextViewItemClickedSubscriber(final AutoCompleteTextView autoCompleteTextView) {
-        Observable<PlaceDetailsResult> adapterViewItemClickEventObservable =
-                RxAutoCompleteTextView.itemClickEvents(autoCompleteTextView)
-
-                        .map(new Func1<AdapterViewItemClickEvent, String>() {
-                            @Override
-                            public String call(AdapterViewItemClickEvent adapterViewItemClickEvent) {
-                                NameAndPlaceId item = (NameAndPlaceId) autoCompleteTextView.getAdapter()
-                                        .getItem(adapterViewItemClickEvent.position());
-                                return item.placeId;
-                            }
-                        })
-                        .observeOn(Schedulers.io())
-                        .flatMap(new Func1<String, Observable<PlaceDetailsResult>>() {
-                            @Override
-                            public Observable<PlaceDetailsResult> call(String placeId) {
-                                return RestClient.INSTANCE.getGooglePlacesClient().details(placeId);
-                            }
-                        })
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .retry();
-
-        compositeSubscription.add(adapterViewItemClickEventObservable
-                .subscribe(new Observer<PlaceDetailsResult>() {
-
-                    private static final String TAG = "PlaceDetailsResult";
-
-                    @Override
-                    public void onCompleted() {
-                        Log.i(TAG, "onCompleted");
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.e(TAG, "onError", e);
-                    }
-
-                    @Override
-                    public void onNext(PlaceDetailsResult placeDetailsResponse) {
-                        Log.i(TAG, placeDetailsResponse.toString());
-                        updateMap(placeDetailsResponse);
-                    }
-                }));
-    }
-
-    private void updateMap(PlaceDetailsResult placeDetailsResponse) {
-        if (map != null) {
-            map.clear();
-            Location location = placeDetailsResponse.result.geometry.location;
-            LatLng latLng = new LatLng(location.lat, location.lng);
-            Marker marker = map.addMarker(new MarkerOptions().position(latLng).title(placeDetailsResponse.result.name));
-            marker.showInfoWindow();
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 5));
-            KeyboardHelper.hideKeyboard(MainActivity.this);
-        }
     }
 
     @Override
